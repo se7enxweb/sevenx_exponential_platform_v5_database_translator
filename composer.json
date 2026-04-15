@@ -1,0 +1,24 @@
+{
+    "name": "se7enxweb/sevenx_exponential_platform_v5_database_translator",
+    "description": "7x Exponential Platform v5 Database Translator is an Exponenital Platform Legacy Extension which provides for dynamic sql query drivers which translate all queries and results ensuring compatiblity is retained between the two cms/dxp software stacks. Required to use Exponential 6.x (Legacy) within Exponential Platform v5 due to DXP Internal API Changes. This provides for pain free use of all of legacy within a symfony platform v5 database. Supports MySQL, SQLite, PostgreSQL. Great for all developers!",
+    "type": "ezpublish-legacy-extension",
+    "keywords": [ "eZ Publish", "eZ Publish Legacy", "eZ Publish Platform", "Exponential", "Exponential Platform", "Database", "Query", "Results", "Translation", "Translator", "v5" ],
+    "homepage": "https://github.com/se7enxweb/sevenx_exponential_platform_v5_database_translator",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name" : "7x",
+            "homepage": "https://se7enx.com",
+            "email": "info@se7enx.com",
+            "role": "Creator"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=8.0.0",
+        "se7enxweb/ezpublish-legacy-installer": "*"
+    },
+    "extra": {
+        "ezpublish-legacy-extension-name": "sevenx_exponential_platform_v5_database_translator"
+    }
+}
