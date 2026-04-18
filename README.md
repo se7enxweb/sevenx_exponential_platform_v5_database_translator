@@ -269,3 +269,24 @@ ln -s ../../src/ezpublish_legacy/sevenx_exponential_platform_v5_database_transla
   the MySQLi DB handler that `QueryTranslatorDriverMySQLiDB` subclasses.
 - `vendor/se7enxweb/exponential-platform-legacy/lib/ezdb/classes/ezpostgresqldb.php` —
   the PostgreSQL DB handler that `QueryTranslatorDriverPostgreSQLDB` subclasses.
+
+
+---
+
+## COPYRIGHT
+
+Copyright (C) 1998 - 2026 7x (formerly Brookins Consulting). All rights reserved.
+
+## LICENSE
+
+This source code is available separately under the following license:
+
+GNU General Public License, version 2
+Grants an copyleft open source license with ABSOLUTELY NO WARRANTY. For the full GPL license text, please see:
+https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+
+---
+
+Copyright © 1998 – 2026 7x (se7enx.com). All rights reserved unless otherwise noted.
+Exponential Platform Legacy is Open Source software released under the GNU GPL v2 or any later version.
+
