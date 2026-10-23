@@ -302,6 +302,18 @@ class QueryTranslatorSQLRewriter
             $sql
         );
 
+        // Pass 2b: contentclass_attribute_id (with an underscore, unlike contentclassattribute_id)
+        // is content_type_field_definition_id in ibexa_search_object_word_link, the only renamed
+        // table that has it. ezenumvalue, ezinfocollection_attribute, ezwaituntildatevalue and
+        // ezworkflow_process keep their legacy names and the column, so a query that names any
+        // of them is left alone. Without this the search indexer's INSERT failed and publishing
+        // from the legacy admin rolled back.
+        if ( strpos( $sql, 'ibexa_search_object_word_link' ) !== false
+             && !preg_match( '/\b(ezenumvalue|ezinfocollection_attribute|ezwaituntildatevalue|ezworkflow_process)\b/', $sql ) )
+        {
+            $sql = preg_replace( '/\bcontentclass_attribute_id\b/', 'content_type_field_definition_id', $sql );
+        }
+
         // Pass 3: table-qualified version renames (handles mixed-table JOINs).
         foreach ( self::$qualifiedVersionMap as $old => $new )
         {
@@ -379,6 +391,11 @@ class QueryTranslatorSQLRewriter
             {
                 $row[ $oldKey ] = $row[ $newKey ];
             }
+        }
+        // the search word link table's spelling of the same column (Pass 2b)
+        if ( array_key_exists( 'content_type_field_definition_id', $row ) && !array_key_exists( 'contentclass_attribute_id', $row ) )
+        {
+            $row['contentclass_attribute_id'] = $row['content_type_field_definition_id'];
         }
 
         // Reverse-map data_type_string: ibexa_string → ezstring etc.
