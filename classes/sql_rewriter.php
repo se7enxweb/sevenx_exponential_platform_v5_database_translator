@@ -264,10 +264,88 @@ class QueryTranslatorSQLRewriter
      *
      * @see doc/THEORY.md §3 for full rationale of each pass.
      *
-     * @param  string $sql  Raw SQL from the legacy kernel.
-     * @return string       Rewritten SQL ready for the Ibexa 5.0 database.
+     * Passes 1 to 4 rewrite the statement outside its string literals only. They used to run over
+     * the whole statement, values included, so content was changed on its way into the database:
+     * a rich text link stored as "ezurl://14" was written as "ibexa_url://14", which no longer
+     * named a URL, so the next save registered "ibexa_url://14" itself as an external URL and the
+     * link was lost; any text naming a legacy table or the word "version" next to a content type
+     * table was changed the same way. A literal is rewritten only as a whole: when it is exactly
+     * a legacy table name (existence checks, PRAGMA arguments) or a datatype identifier (pass 5).
+     *
+     * @param  string $sql              Raw SQL from the legacy kernel.
+     * @param  bool   $backslashEscapes Whether the engine escapes quotes in literals with a
+     *                                  backslash (MySQL), besides doubling them (all engines).
+     * @return string                   Rewritten SQL ready for the Ibexa 5.0 database.
      */
-    public static function rewriteSQL( $sql )
+    public static function rewriteSQL( $sql, $backslashEscapes = true )
+    {
+        $literals = array();
+        $pattern = $backslashEscapes ? "/'(?:[^'\\\\]|\\\\.|'')*'/s" : "/'(?:[^']|'')*'/s";
+        $code = preg_replace_callback(
+            $pattern,
+            function ( $m ) use ( &$literals ) {
+                $literals[] = $m[0];
+                return "\x00" . ( count( $literals ) - 1 ) . "\x00";
+            },
+            (string)$sql
+        );
+        if ( $code === null )   // the pattern failed (backtrack limit): the whole statement as before
+        {
+            return self::rewriteLiteral( self::rewriteCode( $sql ) );
+        }
+
+        $code = self::rewriteCode( $code );
+        if ( !$literals )
+        {
+            return $code;
+        }
+
+        return preg_replace_callback(
+            "/\x00(\d+)\x00/",
+            function ( $m ) use ( $literals ) { return self::rewriteLiteral( $literals[ (int)$m[1] ] ); },
+            $code
+        );
+    }
+
+    /**
+     * A string literal (quotes included), rewritten only as a whole: a legacy table name becomes
+     * its Ibexa 5.0 name, a datatype identifier its Ibexa identifier (pass 5); anything else, the
+     * content of a field among it, is left exactly as it is.
+     *
+     * @param  string $literal
+     * @return string
+     */
+    private static function rewriteLiteral( $literal )
+    {
+        if ( strlen( $literal ) < 2 || $literal[0] !== "'" || substr( $literal, -1 ) !== "'" )
+        {
+            // Only reached with the whole statement (see rewriteSQL()): pass 5 as before.
+            foreach ( self::$datatypeMap as $legacy => $ibexa )
+            {
+                $literal = str_ireplace( "'" . $legacy . "'", "'" . $ibexa . "'", $literal );
+            }
+            return $literal;
+        }
+        $inner = substr( $literal, 1, -1 );
+        if ( isset( self::$tableMap[ $inner ] ) )
+        {
+            return "'" . self::$tableMap[ $inner ] . "'";
+        }
+        $lower = strtolower( $inner );
+        if ( isset( self::$datatypeMap[ $lower ] ) )
+        {
+            return "'" . self::$datatypeMap[ $lower ] . "'";
+        }
+        return $literal;
+    }
+
+    /**
+     * Passes 1 to 4 on a statement whose string literals are replaced by placeholders.
+     *
+     * @param  string $sql
+     * @return string
+     */
+    private static function rewriteCode( $sql )
     {
         // Build regex patterns once per PHP process.
         if ( self::$tablePattern === null )
@@ -348,13 +426,8 @@ class QueryTranslatorSQLRewriter
             $sql = preg_replace( '/\bversion\b/i', 'status', $sql );
         }
 
-        // Pass 5: datatype identifier string-literal rewrites.
-        // Wraps legacy quoted literals e.g. 'ezstring' → 'ibexa_string' so
-        // WHERE/IN clauses that filter by data_type_string still match.
-        foreach ( self::$datatypeMap as $legacy => $ibexa )
-        {
-            $sql = str_ireplace( "'" . $legacy . "'", "'" . $ibexa . "'", $sql );
-        }
+        // Pass 5 (datatype identifier literals, 'ezstring' → 'ibexa_string', so WHERE/IN clauses
+        // that filter by data_type_string still match) is done per literal in rewriteLiteral().
 
         return $sql;
     }

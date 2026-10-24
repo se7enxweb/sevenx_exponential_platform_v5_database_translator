@@ -34,7 +34,7 @@ class QueryTranslatorDriverPostgreSQLDB extends eZPostgreSQLDB
      */
     function query( $sql, $server = false )
     {
-        $sql = QueryTranslatorSQLRewriter::rewriteSQL( $sql );
+        $sql = QueryTranslatorSQLRewriter::rewriteSQL( $sql, false );
         return parent::query( $sql, $server );
     }
 
@@ -47,7 +47,7 @@ class QueryTranslatorDriverPostgreSQLDB extends eZPostgreSQLDB
      */
     function arrayQuery( $sql, $params = array(), $server = false )
     {
-        $sql    = QueryTranslatorSQLRewriter::rewriteSQL( $sql );
+        $sql    = QueryTranslatorSQLRewriter::rewriteSQL( $sql, false );
         $result = parent::arrayQuery( $sql, $params, $server );
 
         if ( is_array( $result ) )
